@@ -54,19 +54,34 @@ class StudyNote {
   }
 
   factory StudyNote.fromJson(Map<String, dynamic> json) {
-    final rawBullets = json['summaryBullets'] as List<dynamic>? ?? const [];
-    final rawCards = json['flashcards'] as List<dynamic>? ?? const [];
+    final rawBullets = json['summaryBullets'];
+    final bullets = <String>[];
+    if (rawBullets is List) {
+      for (final item in rawBullets) {
+        bullets.add(item.toString());
+      }
+    }
+
+    final rawCards = json['flashcards'];
+    final cards = <Flashcard>[];
+    if (rawCards is List) {
+      for (final item in rawCards) {
+        if (item is Map<String, dynamic>) {
+          cards.add(Flashcard.fromJson(item));
+        } else if (item is Map) {
+          cards.add(Flashcard.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+    }
+
     final parsedDate = DateTime.tryParse(json['createdAt'] as String? ?? '');
 
     return StudyNote(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? 'Untitled Note',
       rawText: json['rawText'] as String? ?? '',
-      summaryBullets: rawBullets.map((item) => item.toString()).toList(),
-      flashcards: rawCards
-          .whereType>()
-          .map(Flashcard.fromJson)
-          .toList(),
+      summaryBullets: bullets,
+      flashcards: cards,
       createdAt: parsedDate ?? DateTime.now(),
     );
   }
