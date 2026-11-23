@@ -6,9 +6,17 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
     steps:
       - name: Checkout repository
@@ -48,7 +56,12 @@ jobs:
         run: flutter build appbundle --release
 
       - name: Build Web release
-        run: flutter build web --release
+        run: flutter build web --release --no-wasm-dry-run --base-href /${{ github.event.repository.name }}/
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./build/web
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
@@ -58,3 +71,18 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
             build/web/**
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
