@@ -60,11 +60,11 @@ class SpeechService {
 
       await _tts.stop();
       await _stt.listen(
-        localeId: _localeId,
         onResult: (SpeechRecognitionResult result) {
           onResult(result.recognizedWords, result.finalResult);
         },
         listenOptions: SpeechListenOptions(
+          localeId: _localeId,
           partialResults: true,
           cancelOnError: true,
         ),
