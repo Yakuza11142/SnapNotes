@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -97,35 +98,51 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Row(
             children: [
+              if (!kIsWeb) ...[
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: controller.isLoading
+                        ? null
+                        : () =>
+                            controller.captureFromSource(ImageSource.camera),
+                    icon: const Icon(Icons.camera_alt),
+                    label: const Text('Camera'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: controller.isLoading
+                        ? null
+                        : () =>
+                            controller.captureFromSource(ImageSource.gallery),
+                    icon: const Icon(Icons.photo_library),
+                    label: const Text('Gallery'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               Expanded(
-                child: FilledButton.icon(
+                child: FilledButton.tonalIcon(
                   onPressed: controller.isLoading
                       ? null
-                      : () => controller.captureFromSource(ImageSource.camera),
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text('Camera'),
+                      : () => controller.toggleVoiceDictation(),
+                  icon: Icon(
+                    controller.isListening ? Icons.mic_off : Icons.mic,
+                  ),
+                  label: Text(
+                    controller.isListening ? 'Stop Mic' : 'Voice Note',
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: controller.isLoading
-                      ? null
-                      : () => controller.captureFromSource(ImageSource.gallery),
-                  icon: const Icon(Icons.photo_library),
-                  label: const Text('Gallery'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filledTonal(
-                tooltip: controller.isListening ? 'Stop mic' : 'Voice note',
-                onPressed: controller.isLoading
-                    ? null
-                    : () => controller.toggleVoiceDictation(),
-                icon: Icon(controller.isListening ? Icons.mic_off : Icons.mic),
               ),
             ],
           ),
+          if (kIsWeb) ...[
+            const SizedBox(height: 8),
+            const Text(
+              'Web mode: Paste or type study text, use Voice Note, and study saved flashcards locally in your browser.',
+            ),
+          ],
           const SizedBox(height: 12),
           TextField(
             controller: _textController,
