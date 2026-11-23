@@ -13,58 +13,82 @@ class SpeechService {
 
   Future<void> init({AppSettings settings = const AppSettings()}) async {
     await applySettings(settings);
-    _sttAvailable = await _stt.initialize();
+    try {
+      _sttAvailable = await _stt.initialize();
+    } catch (_) {
+      _sttAvailable = false;
+    }
   }
 
   Future<void> applySettings(AppSettings settings) async {
     _localeId = settings.speechLocale;
-    await _tts.setLanguage(_localeId);
-    await _tts.setSpeechRate(settings.speechRate);
+    try {
+      await _tts.setLanguage(_localeId);
+      await _tts.setSpeechRate(settings.speechRate);
+    } catch (_) {
+      // Ignore unsupported browser voice engine parameters.
+    }
   }
 
   Future<void> speak(String text) async {
     final cleaned = text.trim();
     if (cleaned.isEmpty) return;
-    await _tts.stop();
-    await _tts.speak(cleaned);
+    try {
+      await _tts.stop();
+      await _tts.speak(cleaned);
+    } catch (_) {
+      // Ignore if browser audio autoplay/TTS is blocked.
+    }
   }
 
   Future<void> stopSpeaking() async {
-    await _tts.stop();
+    try {
+      await _tts.stop();
+    } catch (_) {}
   }
 
   Future<bool> startListening({
     required void Function(String transcript, bool isFinal) onResult,
   }) async {
-    if (!_sttAvailable) {
-      _sttAvailable = await _stt.initialize();
-    }
-    if (!_sttAvailable) {
+    try {
+      if (!_sttAvailable) {
+        _sttAvailable = await _stt.initialize();
+      }
+      if (!_sttAvailable) {
+        return false;
+      }
+
+      await _tts.stop();
+      await _stt.listen(
+        localeId: _localeId,
+        onResult: (SpeechRecognitionResult result) {
+          onResult(result.recognizedWords, result.finalResult);
+        },
+        listenOptions: SpeechListenOptions(
+          partialResults: true,
+          cancelOnError: true,
+        ),
+      );
+      return true;
+    } catch (_) {
       return false;
     }
-
-    await _tts.stop();
-    await _stt.listen(
-      localeId: _localeId,
-      onResult: (SpeechRecognitionResult result) {
-        onResult(result.recognizedWords, result.finalResult);
-      },
-      listenOptions: SpeechListenOptions(
-        partialResults: true,
-        cancelOnError: true,
-      ),
-    );
-    return true;
   }
 
   Future<void> stopListening() async {
-    if (_stt.isListening) {
-      await _stt.stop();
-    }
+    try {
+      if (_stt.isListening) {
+        await _stt.stop();
+      }
+    } catch (_) {}
   }
 
   Future<void> dispose() async {
-    await _stt.cancel();
-    await _tts.stop();
+    try {
+      await _stt.cancel();
+    } catch (_) {}
+    try {
+      await _tts.stop();
+    } catch (_) {}
   }
 }
