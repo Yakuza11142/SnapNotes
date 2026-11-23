@@ -17,15 +17,19 @@ class LocalStorageService {
       }
 
       final decoded = jsonDecode(content);
-      if (decoded is! List<dynamic>) {
+      if (decoded is! List) {
         return const [];
       }
 
-      final notes = decoded
-          .whereType>()
-          .map(StudyNote.fromJson)
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final notes = <StudyNote>[];
+      for (final item in decoded) {
+        if (item is Map<String, dynamic>) {
+          notes.add(StudyNote.fromJson(item));
+        } else if (item is Map) {
+          notes.add(StudyNote.fromJson(Map<String, dynamic>.from(item)));
+        }
+      }
+      notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return notes;
     } catch (_) {
       return const [];
